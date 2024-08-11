@@ -1,10 +1,10 @@
 module.exports = [
   {
-    files: ["**/*.js", "**/*.ts"],
+    files: ["**/*.js"],
     ignores: ["node_modules/**"],
     languageOptions: {
       ecmaVersion: 2021,
-      sourceType: "module",
+      sourceType: "script",
     },
     plugins: {
       prettier: require("eslint-plugin-prettier"),
@@ -28,10 +28,18 @@ module.exports = [
       "no-unreachable": "error", // 到達不能なコードを禁止
       "valid-typeof": "error", // typeof演算子の結果を正しい文字列リテラルと比較することを強制
       "no-prototype-builtins": "off", // Object.prototypeのメソッドを直接使用することを許可
-      "consistent-return": "warn", // 関数が常に同じ型の値を返すことを強制
+      "consistent-return": "error", // 関数が常に同じ型の値を返すことを強制
       "dot-notation": "warn", // プロパティへのアクセスにドット表記を強制
       "no-var": "error", // varの使用を禁止し、letまたはconstを強制
       "prefer-const": "warn", // 変更されない変数にはconstを使用することを推奨
+      "prefer-arrow-callback": "error", // コールバック関数としてアロー関数を優先して使用するように強制
+      "arrow-body-style": ["error", "always"], // アロー関数の本体のスタイルを統一(常に中括弧を使用)
+      "func-style": ["error", "expression"], // 関数式を使用するよう強制
+      "arrow-parens": ["error", "always"], // アロー関数のパラメータの括弧の使用を統一(引数が1つの場合でも括弧を付ける)
+      "arrow-spacing": ["error", { before: true, after: true }], // アロー関数の矢印（=>）の前後にスペースを要求
+      "no-confusing-arrow": ["error", { allowParens: true }], // アロー関数の構文が=>と混同しやすいケース（特に条件演算子と組み合わせた場合）を避けるために使用
+      "no-useless-constructor": "error", // クラスで意味のない（何もしない）コンストラクタを禁止
+      "func-names": ["error", "always"], // 無名関数に名前を付けることを強制(デバッグ時にスタックトレースがより明確になるため)
       "prettier/prettier": [
         "error",
         {
@@ -40,18 +48,6 @@ module.exports = [
           semi: true,
           tabWidth: 2,
         },
-      ],
-    },
-  },
-  {
-    files: ["**/*.ts"],
-    languageOptions: {
-      parser: require("@typescript-eslint/parser"),
-    },
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_" },
       ],
     },
   },

@@ -12,7 +12,7 @@ const {
 } = require("../utils");
 
 // トップページを返す
-router.get("/", function (req, res) {
+router.get("/", (req, res) => {
   res.render("index", {
     clients: clients,
     authzServer: authzServer,
@@ -20,7 +20,7 @@ router.get("/", function (req, res) {
 });
 
 // 認可エンドポイント
-router.get("/authorize", function (req, res) {
+router.get("/authorize", (req, res) => {
   /*
   パラメータチェック
   client_id[必須]
@@ -122,7 +122,7 @@ router.get("/authorize", function (req, res) {
 });
 
 // 承認エンドポイント
-router.post("/approve", function (req, res) {
+router.post("/approve", (req, res) => {
   const requests = req.session.requests[req.body.reqid];
   delete req.session.requests[req.body.reqid];
   // reqidに紐づいたリクエストが見つからない場合エラーを返す
@@ -181,7 +181,7 @@ router.post("/approve", function (req, res) {
 });
 
 // トークンエンドポイント
-router.post("/token", function (req, res) {
+router.post("/token", (req, res) => {
   /*
   クライアント認証情報取得
   */
@@ -280,12 +280,12 @@ router.post("/token", function (req, res) {
     }
     // リフレッシュトークンの場合
     else if (req.body.grant_type === "refresh_token") {
-      nosql.one().make(function (builder) {
+      nosql.one().make((builder) => {
         builder.where("refresh_token", req.body.refresh_token);
-        builder.callback(function (err, token) {
+        builder.callback((err, token) => {
           if (token) {
             if (token.client_id !== clientId) {
-              nosql.remove().make(function (builder) {
+              nosql.remove().make((builder) => {
                 builder.where("refresh_token", req.body.refresh_token);
               });
               res.status(400).json({ error: "invalid_grant" });
