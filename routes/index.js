@@ -12,7 +12,7 @@ const {
 } = require("../utils");
 
 // トップページを返す
-router.get("/", function (req, res, next) {
+router.get("/", function (req, res) {
   res.render("index", {
     clients: clients,
     authzServer: authzServer,
@@ -20,7 +20,7 @@ router.get("/", function (req, res, next) {
 });
 
 // 認可エンドポイント
-router.get("/authorize", function (req, res, next) {
+router.get("/authorize", function (req, res) {
   /*
   パラメータチェック
   client_id[必須]
@@ -81,7 +81,7 @@ router.get("/authorize", function (req, res, next) {
   scope[任意]
   */
 
-  let scope = req.query.scope ? req.query.scope.split(" ") : undefined;
+  const scope = req.query.scope ? req.query.scope.split(" ") : undefined;
   // リクエストにscopeが指定されているかチェック
   if (scope) {
     // リクエストで渡されたscopeに不正なscopeが1つでも含まれているかチェック
@@ -122,7 +122,7 @@ router.get("/authorize", function (req, res, next) {
 });
 
 // 承認エンドポイント
-router.post("/approve", function (req, res, next) {
+router.post("/approve", function (req, res) {
   const requests = req.session.requests[req.body.reqid];
   delete req.session.requests[req.body.reqid];
   // reqidに紐づいたリクエストが見つからない場合エラーを返す
@@ -181,13 +181,13 @@ router.post("/approve", function (req, res, next) {
 });
 
 // トークンエンドポイント
-router.post("/token", function (req, res, next) {
+router.post("/token", function (req, res) {
   /*
   クライアント認証情報取得
   */
 
   // クライアント情報をAuthorizationヘッダーに登録してきた場合
-  const auth = req.headers["authorization"];
+  const auth = req.headers.authorization;
   let clientId;
   let clientSecret;
 
@@ -284,7 +284,7 @@ router.post("/token", function (req, res, next) {
         builder.where("refresh_token", req.body.refresh_token);
         builder.callback(function (err, token) {
           if (token) {
-            if (token.client_id != clientId) {
+            if (token.client_id !== clientId) {
               nosql.remove().make(function (builder) {
                 builder.where("refresh_token", req.body.refresh_token);
               });
