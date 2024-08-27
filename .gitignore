@@ -61,3 +61,4 @@ typings/
 .next
 
 database.nosql
+.DS_Store
