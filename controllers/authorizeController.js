@@ -6,10 +6,6 @@ const _ = require("underscore");
 exports.authorization = (req, res) => {
   const { client_id, response_type, scope } = req.query;
   let { redirect_uri } = req.query;
-  /*
-    パラメータチェック
-    client_id[必須]
-    */
 
   // リクエストで渡されたclient_idが存在するかチェック
   const client = getClient(client_id);
@@ -19,10 +15,6 @@ exports.authorization = (req, res) => {
     return;
   }
 
-  /*
-    パラメータチェック
-    redirect_uri[任意]
-    */
   if (redirect_uri) {
     // リクエストで渡されたredirect_urlが登録されたuriと一致するかチェック
     if (!client.redirect_uris.includes(redirect_uri)) {
@@ -37,11 +29,6 @@ exports.authorization = (req, res) => {
     [redirect_uri] = client.redirect_uris;
   }
 
-  /*
-    パラメータチェック
-    response_type[必須]
-    */
-
   // リクエストにrespons_typeが指定されているかチェック
   if (!response_type) {
     const parsedUrl = buildUrl(redirect_uri, {
@@ -50,6 +37,7 @@ exports.authorization = (req, res) => {
     res.redirect(parsedUrl);
     return;
   }
+
   // リクエストで渡されたrespons_typeについて対応しているかチェック
   else if (!authzServer.responseType.includes(response_type)) {
     const parsedUrl = buildUrl(redirect_uri, {
@@ -58,11 +46,6 @@ exports.authorization = (req, res) => {
     res.redirect(parsedUrl);
     return;
   }
-
-  /*
-    パラメータチェック
-    scope[任意]
-    */
 
   const scopes = scope ? scope.split(" ") : undefined;
   // リクエストにscopeが指定されているかチェック
@@ -86,9 +69,6 @@ exports.authorization = (req, res) => {
     return;
   }
 
-  /*
-    リダイレクト前後で状態を保持するためのreqidを発行
-    */
   const reqid = randomstring.generate(8);
   // reqidをキーとしてリクエストのクエリパラメータを格納
   req.session.requests = {};

@@ -4,10 +4,6 @@ const nosql = require("nosql").load("database.nosql");
 const { decodeClientCredentials, getClient } = require("../utils");
 
 exports.token = (req, res) => {
-  /*
-    クライアント認証情報取得
-    */
-
   // クライアント情報をAuthorizationヘッダーに登録してきた場合
   const { authorization } = req.headers;
   let r_clientId;
@@ -32,10 +28,6 @@ exports.token = (req, res) => {
     r_clientSecret = client_secret;
   }
 
-  /*
-    パラメータチェック
-    client_id[任意]
-    */
   const client = getClient(r_clientId);
 
   if (!client) {
@@ -48,17 +40,9 @@ exports.token = (req, res) => {
     return;
   }
 
-  /*
-    パラメータチェック
-    grant_type[必須]
-     */
   if (grant_type) {
     // 認可コードグラントの場合
     if (grant_type === "authorization_code") {
-      /*
-        パラメータチェック
-        code[必須]
-        */
       const { code } = req.body;
       const s_req = req.session.requests[code];
       delete req.session.requests[code];
