@@ -4,13 +4,15 @@ const randomstring = require("randomstring");
 const _ = require("underscore");
 
 exports.authorization = (req, res) => {
+  const { client_id, response_type, scope } = req.query;
+  let { redirect_uri } = req.query;
   /*
     パラメータチェック
     client_id[必須]
     */
 
   // リクエストで渡されたclient_idが存在するかチェック
-  const client = getClient(req.query.client_id);
+  const client = getClient(client_id);
   if (!client) {
     // 存在しない場合エラーページを返す
     res.render("warn", { message: "Unknown client" });
@@ -21,20 +23,18 @@ exports.authorization = (req, res) => {
     パラメータチェック
     redirect_uri[任意]
     */
-  let redirect_uri;
-
-  if (req.query.redirect_uri) {
+  if (redirect_uri) {
     // リクエストで渡されたredirect_urlが登録されたuriと一致するかチェック
-    if (!client.redirect_uris.includes(req.query.redirect_uri)) {
+    if (!client.redirect_uris.includes(redirect_uri)) {
       // 一致しない場合エラーページを返す
       res.render("warn", { message: "Invalid redirect URI" });
       return;
     }
-    redirect_uri = req.query.redirect_uri;
+    redirect_uri = redirect_uri;
   }
   // redirect_urlが指定されていない場合、デフォルトのredirect_urlを設定
   else {
-    redirect_uri = client.redirect_uris[0];
+    [redirect_uri] = client.redirect_uris;
   }
 
   /*
@@ -43,7 +43,7 @@ exports.authorization = (req, res) => {
     */
 
   // リクエストにrespons_typeが指定されているかチェック
-  if (!req.query.response_type) {
+  if (!response_type) {
     const parsedUrl = buildUrl(redirect_uri, {
       error: "invalid_response_type",
     });
@@ -51,7 +51,7 @@ exports.authorization = (req, res) => {
     return;
   }
   // リクエストで渡されたrespons_typeについて対応しているかチェック
-  else if (!authzServer.responseType.includes(req.query.response_type)) {
+  else if (!authzServer.responseType.includes(response_type)) {
     const parsedUrl = buildUrl(redirect_uri, {
       error: "unsupported_response_type",
     });
@@ -64,11 +64,11 @@ exports.authorization = (req, res) => {
     scope[任意]
     */
 
-  const scope = req.query.scope ? req.query.scope.split(" ") : undefined;
+  const scopes = scope ? scope.split(" ") : undefined;
   // リクエストにscopeが指定されているかチェック
-  if (scope) {
+  if (scopes) {
     // リクエストで渡されたscopeに不正なscopeが1つでも含まれているかチェック
-    if (_.difference(scope, client.scope).length > 0) {
+    if (_.difference(scopes, client.scope).length > 0) {
       // 含まれていた場合、リダイレクトエンドポインへエラーを返す
       const urlParsed = buildUrl(redirect_uri, {
         error: "invalid_scope",

@@ -9,39 +9,41 @@ exports.token = (req, res) => {
     */
 
   // クライアント情報をAuthorizationヘッダーに登録してきた場合
-  const auth = req.headers.authorization;
-  let clientId;
-  let clientSecret;
+  const { authorization } = req.headers;
+  let r_clientId;
+  let r_clientSecret;
 
-  if (auth) {
-    const clientCredentials = decodeClientCredentials(auth);
-    clientId = clientCredentials.id;
-    clientSecret = clientCredentials.secret;
+  if (authorization) {
+    const clientCredentials = decodeClientCredentials(authorization);
+    r_clientId = clientCredentials.id;
+    r_clientSecret = clientCredentials.secret;
   }
 
+  const { client_id, client_secret, grant_type } = req.body;
+
   // クライアント情報をformパラメーターに登録してきた場合
-  if (req.body.client_id) {
+  if (client_id) {
     // Authorizationヘッダーとボディ両方に含めている場合はエラーを返す
-    if (clientId) {
+    if (r_clientId) {
       res.status(401).json({ error: "invalid_client" });
       return;
     }
-    clientId = req.body.client_id;
-    clientSecret = req.body.client_secret;
+    r_clientId = client_id;
+    r_clientSecret = client_secret;
   }
 
   /*
     パラメータチェック
     client_id[任意]
     */
-  const client = getClient(clientId);
+  const client = getClient(r_clientId);
 
   if (!client) {
     res.status(401).json({ error: "invalid_client" });
     return;
   }
 
-  if (client.client_secret !== clientSecret) {
+  if (client.client_secret !== r_clientSecret) {
     res.status(401).json({ error: "invalid_clientsecret" });
     return;
   }
@@ -50,39 +52,41 @@ exports.token = (req, res) => {
     パラメータチェック
     grant_type[必須]
      */
-  if (req.body.grant_type) {
+  if (grant_type) {
     // 認可コードグラントの場合
-    if (req.body.grant_type === "authorization_code") {
+    if (grant_type === "authorization_code") {
       /*
         パラメータチェック
         code[必須]
         */
-      const requests = req.session.requests[req.body.code];
-      delete req.session.requests[req.body.code];
+      const { code } = req.body;
+      const s_req = req.session.requests[code];
+      delete req.session.requests[code];
       // 前回のセッションで使用した認可コードと同じ場合
-      if (requests) {
+      if (s_req) {
+        const { client_id: s_client_id, scope: s_scope } = s_req;
         // 前回のセッションで渡されたclient_idと同じかチェック
-        if (requests.client_id === clientId) {
+        if (s_client_id === r_clientId) {
           // トークンの生成
           const access_token = randomstring.generate();
           const refresh_token = randomstring.generate();
 
           nosql.insert({
             access_token: access_token,
-            client_id: clientId,
-            scope: requests.scope,
+            client_id: r_clientId,
+            scope: s_scope,
           });
           nosql.insert({
             refresh_token: refresh_token,
-            client_id: clientId,
-            scope: requests.scope,
+            client_id: r_clientId,
+            scope: s_scope,
           });
 
           res.status(200).json({
             access_token: access_token,
             refresh_token: refresh_token,
             token_type: "Bearer",
-            scope: requests.scope.join(" "),
+            scope: s_scope.join(" "),
           });
           return;
         }
@@ -101,21 +105,22 @@ exports.token = (req, res) => {
       }
     }
     // リフレッシュトークンの場合
-    else if (req.body.grant_type === "refresh_token") {
+    else if (grant_type === "refresh_token") {
+      const { refresh_token } = req.body;
       nosql.one().make((builder) => {
-        builder.where("refresh_token", req.body.refresh_token);
+        builder.where("refresh_token", refresh_token);
         builder.callback((err, token) => {
           if (token) {
-            if (token.client_id !== clientId) {
+            if (token.client_id !== r_clientId) {
               nosql.remove().make((builder) => {
-                builder.where("refresh_token", req.body.refresh_token);
+                builder.where("refresh_token", refresh_token);
               });
               res.status(400).json({ error: "invalid_grant" });
               return;
             }
 
             const access_token = randomstring.generate();
-            nosql.insert({ access_token: access_token, client_id: clientId });
+            nosql.insert({ access_token: access_token, client_id: r_clientId });
             const token_response = {
               access_token: access_token,
               token_type: "Bearer",
