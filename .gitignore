@@ -60,5 +60,7 @@ typings/
 # next.js build output
 .next
 
+# MongoDB output data
+data/
 database.nosql
 .DS_Store
